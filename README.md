@@ -1,7 +1,7 @@
 # PERSEUS_SPARK_frontend
 >This work was cooperated with and supported by Mr. [Jackie Zhang](https://github.com/ReactiveXYZ-Dev)
 
-This repository contains all files used to deploy PERSEUS_HUB on the local machine. 
+This repository contains all files used to deploy PERSEUS_HUB on the local machine. Please refer to the [paper](https://www.mdpi.com/2227-9709/4/3/22) for more details.
 
 ## Getting Started
 
@@ -9,73 +9,76 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+* Please make sure you have Python2 and pip installed in the machine. 
+* Please make sure Redis is running on your local machine by running:
 
 ```
-Give examples
+redis-server
 ```
+
+You may check its status through
+```
+redis-cli ping
+```
+
+Refer to **Redis Quick Start** for more details (https://redis.io/topics/quickstart).
+
+* See [Troubleshooting](##Troubleshooting) if you encountered any issues.
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+To install PERSEUS_HUB on your local machine, just run the command as follows.
 
 Say what the step will be
 
 ```
-Give the example
+./install.sh
 ```
 
-And repeat
-
-```
-until finished
-```
+And then you should be able to access to the login page in your default browser. Create an account with any email you want, and you should be able to see the frontend page.
 
 End with an example of getting some data out of the system or using it for a little demo
 
-## Running the tests
+## DATA in the demo
 
-Explain how to run the automated tests for this system
+The data used in the demo is store in "Data-Visualization-Website-local-installable⁩/⁨app⁩/data⁩/demo⁩". The database that supports the frontend has two components:
+* The edge file
+* The data file
 
-### Break down into end to end tests
+The edge file ("edges.tsv") records the connectivity of the input graph with the format <src, dst, weight>. It was inserted into the database through "edges.sql".
+The data files include "db.csv" and "display.csv". The former contains the numerical node features while the latter records its projection/approximated values.
+Note that the three files, "edges.tsv", "db.csv" and "display.csv" are the output of PERSEUS_SPARK. One may replace these files with whatever input data you have, on the condition of rewriting the corresponding SQL files.
 
-Explain what these tests test and why
 
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+* [Django](https://www.djangoproject.com/) - The web framework used
+* [Redis](https://redis.io/) - In-memory data structure store, cache and message broker used.
+* [Sqlite3](https://www.sqlite.org/index.html) - Database engine used
 
-## Contributing
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+## Troubleshooting
 
-## Versioning
+* SQL config error on Mac OSX installation
+Error message: 
+```
+OSError: mysql_config not found
+...
+Command "python setup.py egg_info" failed with error code 1 in ...
+```
+Refer to this [post](https://github.com/clips/pattern/issues/203)
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+* Dataset not found error when accessing to the website
+Please make sure you have Redis running on your machine.
+
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Di Jin** - *Corresponding author*
+* **Jackie Zhang** - *Website deployment*
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of contributors in the [paper](https://www.mdpi.com/2227-9709/4/3/22) who participated in this project.
 
 
 ## Acknowledgments
@@ -93,5 +96,5 @@ Please kindly cite this work if you find it useful:
   organization={Multidisciplinary Digital Publishing Institute}
 }
 ```
-For further technical details, please reach out to (Di Jin)[http://www-personal.umich.edu/~dijin/].
+For further technical details, please reach out to [Di Jin](http://www-personal.umich.edu/~dijin/).
 
