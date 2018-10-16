@@ -29,7 +29,7 @@ Refer to **Redis Quick Start** for more details (https://redis.io/topics/quickst
 
 To install PERSEUS_HUB on your local machine, just run the command as follows.
 
-Say what the step will be
+Under the "Data-Visualization-Website-local-installable" directory, run:
 
 ```
 ./install.sh
