@@ -1,5 +1,5 @@
 # PERSEUS_SPARK_frontend
->This work was cooperated with and supported by Mr. [Jackie Zhang](https://github.com/ReactiveXYZ-Dev)
+>This work was led by [Di Jin](http://www-personal.umich.edu/~dijin/) under the supervision of [Christos Faloutsos](http://www.cs.cmu.edu/~christos/) and [Danai Koutra](http://web.eecs.umich.edu/~dkoutra/). The implementation is cooperated with and supported by Mr. [Jackie Zhang](https://github.com/ReactiveXYZ-Dev)
 
 This repository contains all files used to deploy PERSEUS_HUB on the local machine. Please refer to the [paper](https://www.mdpi.com/2227-9709/4/3/22) for more details.
 
