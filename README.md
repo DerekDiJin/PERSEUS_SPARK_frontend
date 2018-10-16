@@ -23,7 +23,7 @@ redis-cli ping
 
 Refer to **Redis Quick Start** for more details (https://redis.io/topics/quickstart).
 
-* See [Troubleshooting](##Troubleshooting) if you encountered any issues.
+* See [Troubleshooting](#Troubleshooting) if you encountered any issues.
 
 ### Installing
 
