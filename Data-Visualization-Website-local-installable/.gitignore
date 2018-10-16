@@ -1,0 +1,11 @@
+*.pyc
+db.sqlite3
+web/*.pyc
+runserver.sh
+runSpark.sh
+app/runSpark.sh
+app/data/*
+!app/data/demo/db.csv
+!app/data/demo/display.csv
+!app/data/demo/edges.tsv
+dump.rdb

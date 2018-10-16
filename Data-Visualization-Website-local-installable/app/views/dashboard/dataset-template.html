@@ -1,0 +1,1141 @@
+{% extends 'dashboard/base.html' %}
+
+{% block tabstyles %}
+<link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.6.min.css">
+<style type="text/css">
+#priority-selector a {
+	display: inline;
+}
+.tab__disabled {
+	color: gray;
+	opacity: 0.5;
+}
+.tab__disabled a {
+	color: gray !important;
+}
+
+/* Node related */
+.node circle {
+	fill: steelblue;
+}
+.link {
+	fill: none;
+	stroke: #000;
+	stroke-opacity: .2;
+}
+.tick line {
+	shape-rendering: crispEdges;
+	stroke: #000;
+}
+line.minor  {
+	stroke: #777;
+	stroke-dasharray: 2,2;
+}
+path.domain {
+	fill: none;
+	stroke: black;
+}
+.bk-bs-btn {
+	display: none;
+}
+.bk-root .bk-grid-row {
+	width: 100vw !important;
+}
+.bk-root .bk-widget-box {
+	width: 12.5vw !important;
+}
+.bk-root .bk-grid-row .bk-widget-box:nth-child(odd) .bk-widget {
+	left: 40%;
+}
+/* Graph related */
+.graph-stats-table {
+  border: solid black 1px;
+}
+.graph-stats-table th,td {
+  border: solid black 1px;
+  padding: 5px;
+}
+</style>
+
+{% endblock %}
+
+{% block tabs %}
+<li class="active">
+	<a data-toggle="collapse" href="#dataset-sections" 
+		aria-expanded="false" 
+		aria-controls="dataset-sections">
+		<i class="fa fa-database" aria-hidden="true"></i> Datasets
+	</a>
+	<ul class="collapse nav" id="dataset-sections">
+		<li><a href="/dashboard/">Public datasets</a></li>
+		<li><a href="/dashboard/?my">My Datasets</a></li>
+	</ul>
+</li>
+<li>
+	<a data-toggle="collapse" href="#bookmark-sections" 
+		aria-expanded="false" 
+		aria-controls="bookmark-sections">
+		<i class="fa fa-bookmark" aria-hidden="true"></i> Bookmarks
+	</a>
+	<ul class="collapse nav" id="bookmark-sections">
+		<li><a href="/bookmarks/">Public bookmarks</a></li>
+		<li><a href="/bookmarks/?my">My bookmarks</a></li>
+	</ul>
+</li>
+<li>
+	<a href="/upload/">
+		<i class="fa fa-upload" aria-hidden="true"></i> Upload data file
+	</a>
+</li>
+{% endblock %}
+
+{% block tabdetails %}
+<div class="row">
+	<div class="col-sm-12">
+		<!-- Search bar -->
+		<div class="form-group" style="margin-top: 20px">
+			<label style="display: inline">Search by Node ID:</label> 
+			<input style="width: 60%; display: inline" type="text" id="search-node-id" placeholder="Node ID" autocomplete="off" size="35" class="form-control">
+			<button class="btn btn-primary" id="node-search-btn">Search</button>
+		</div>
+		<!-- Graph -->
+		{{ graph | safe }}
+		<!-- Data browser -->
+		<div class="row" style="margin-top: 20px" id="data-browser">
+			<div class="col-sm-12">
+				<ul class="nav nav-tabs" role="tablist" id="tabs">
+					<li role="presentation" class="active"><a href="#info-console" aria-controls="info-console" role="tab" data-toggle="tab">Information console</a></li>
+					<li role="presentation"><a href="#egonet" aria-controls="egonet" role="tab" data-toggle="tab">EgoNet</a></li>
+					<li role="presentation"><a href="#adj-maxtrix" aria-controls="adj-maxtrix" role="tab" data-toggle="tab">Adj Matrix</a></li>
+					<!-- <li role="presentation"><a href="#GFADD" aria-controls="GFADD" role="tab" data-toggle="tab">GFADD</a></li>
+					<li role="presentation"><a href="#ABOD" aria-controls="ABOD" role="tab" data-toggle="tab">ABOD</a></li>
+					<li role="presentation"><a href="#CombAnScore" aria-controls="CombAnScore" role="tab" data-toggle="tab">Combined Anomaly Score</a></li> -->
+					<li role="presentation" class="tab__disabled"><a href="#GFADD" aria-controls="GFADD" role="tab">GFADD (Coming soon)</a></li>
+					<li role="presentation" class="tab__disabled"><a href="#ABOD" aria-controls="ABOD" role="tab">ABOD (Coming soon)</a></li>
+					<li role="presentation" class="tab__disabled"><a href="#CombAnScore" aria-controls="CombAnScore" role="tab">Comb Anomally (Coming soon)</a></li> 
+
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="info-console">
+						<table class="table table-hover">
+							<thead data-bind="if: nodes().length > 0">
+								<tr>
+									<th>Node ID</th>
+									<th>Degree</th>
+									<th>Pagerank</th>
+									<th>Singular Vector 1</th>
+									<th>Egonet</th>
+									<th>Adj matrix</th>
+									<th>Bookmark / Unbookmark</th>
+								</tr>
+							</thead>
+							<tbody data-bind="foreach: nodes">
+								<td data-bind="text: id"></td>
+								<td data-bind="text: degree"></td>
+								<td data-bind="text: pageRank"></td>
+								<td data-bind="text: eigenVector"></td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawEgonet(id) }" class="btn btn-primary btn-sm btn-egonet">View</button>
+								</td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawAdjMatrix(id) }" class="btn btn-primary btn-sm btn-adj-matrix">View</button>
+								</td>
+								<td>
+									<span class="star" data-toggle="tooltip" data-placement="right" title="Click to bookmark/unbookmark" data-bind="attr: { 'data-node-id': id }, click: function() { if (!bookmarked) { $('#bookmark-creator').modal(); bookmarkView.data().nodeId(id);} else { $('#bookmark-remover').modal();} bindedNode = this }">
+										<span class="star-icon fa fa-star"></span>
+									</span>
+								</td>
+							</tbody>
+							<tbody>
+								<h4 data-bind="if: nodes().length == 0"> No data records available. Please select a data point above</h4>
+							</tbody>		
+						</table>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="egonet">
+						<svg class="egonet" id="egonet-id"/>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="adj-maxtrix">
+						<svg class="adjacency" style="width:500px;height:500px; lightgray solid;" id = "adj-id"/>
+					</div>
+					<div role="tabpanel" class="tab-pane fade" id="GFADD">
+						<table class="table table-hover" id="GFADD_table">
+							<thead >
+								<tr>
+									<th>Node ID</th>
+									<th>GFADD Score</th>
+									<th>Egonet</th>
+									<th>Adj matrix</th>
+								</tr>
+							</thead>
+							<tbody data-bind="foreach: nodes">
+								<td data-bind="text: id"></td>
+								<td data-bind="text: score"></td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawEgonet(id) }" class="btn btn-primary btn-sm btn-egonet">View</button>
+								</td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawAdjMatrix(id) }" class="btn btn-primary btn-sm btn-adj-matrix">View</button>
+								</td>
+							</tbody>
+						</table>
+					</div>
+					<div role="tabpanel" class="tab-pane fade" id="ABOD">
+						<table class="table table-hover" id="ABOD_table">
+							<thead >
+								<tr>
+									<th>Node ID</th>
+									<th>ABOD Score</th>
+									<th>Egonet</th>
+									<th>Adj matrix</th>
+								</tr>
+							</thead>
+							<tbody data-bind="foreach: nodes">
+								<td data-bind="text: id"></td>
+								<td data-bind="text: score"></td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawEgonet(id) }" class="btn btn-primary btn-sm btn-egonet">View</button>
+								</td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawAdjMatrix(id) }" class="btn btn-primary btn-sm btn-adj-matrix">View</button>
+								</td>
+							</tbody>
+						</table>
+					</div>
+					<div role="tabpanel" class="tab-pane fade" id="CombAnScore">
+						<table class="table table-hover" id="CombAnScore_table">
+							<thead >
+								<tr>
+									<th>Node ID</th>
+									<th>Combined Score</th>
+									<th>Egonet</th>
+									<th>Adj matrix</th>
+								</tr>
+							</thead>
+							<tbody data-bind="foreach: nodes">
+								<td data-bind="text: id"></td>
+								<td data-bind="text: score"></td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawEgonet(id) }" class="btn btn-primary btn-sm btn-egonet">View</button>
+								</td>
+								<td>
+									<button data-bind="attr: { id : id }, click: function() { $parent.drawAdjMatrix(id) }" class="btn btn-primary btn-sm btn-adj-matrix">View</button>
+								</td>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Bookmark creator -->
+<div class="modal fade" id="bookmark-creator" tabindex="-1" role="dialog" aria-labelledby="bookmark-creator">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Bookmark the selection</h4>
+			</div>
+			<div class="modal-body">
+				<div>
+					<div class="form-group">
+						<label for="priority">Please select a priority</label>
+						<div class="dropdown">
+							<button class="btn btn-default dropdown-toggle" type="button" id="priority-selector" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+								<span data-bind="text: priority"></span>
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu" id="priority-selector" aria-labelledby="priority-selector">
+								<li style="padding: 10px">
+									<span style="background-color: red; width: 20px; height: 20px; float: left"></span>
+									<a data-bind="click: selectPriority('high', 2)">high</a>
+								</li>
+								<li style="padding: 10px">
+									<span style="background-color: yellow; width: 20px; height: 20px; float: left"></span>
+									<a data-bind="click: selectPriority('medium', 1)">medium</a>
+								</li>
+								<li style="padding: 10px">
+									<span style="background-color: green; width: 20px; height: 20px; float: left"></span>
+									<a data-bind="click: selectPriority('low', 0)">low</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div class="form-group">
+						<input class="form-control" placeholder="Enter a brief note if any" data-bind="value: note"></input>
+					</div>
+					<div class="checkbox">
+						<label>
+						<input type="checkbox" data-bind="checked: publicized"> Do you want to publicize it?
+						</label>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" id="create-bookmark-btn">Create</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Bookmark remover -->
+<div class="modal fade" id="bookmark-remover" tabindex="-1" role="dialog" aria-labelledby="bookmark-remover">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Bookmark removal</h4>
+			</div>
+			<div class="modal-body">
+				<div>
+					Are you sure you want to remove this bookmark ?
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-danger" id="remove-bookmark-btn">Remove</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Loading indicator -->
+{% include 'components/loading-indicator.html' %}
+
+{% include 'components/modal.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<!-- D3 JS -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<!-- Bokeh JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bokeh/0.12.6/bokeh.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bokeh/0.12.6/bokeh-gl.min.js"></script>
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.6.min.js"></script>
+
+<!-- Graph JS -->
+{{ graph_script | safe }}
+
+<script type="text/javascript">
+
+	// render dataset id
+	var datasetId = {{ dataset.id }};
+
+	// init bookmark models
+	var bookmarkView = new View({
+		el : document.getElementById('bookmark-creator'),
+		data : {
+			priority : 'low',
+			priorityVal : 0,
+			publicized : false,
+			propertyName: "",
+			xCoord: "",
+			yCoord: "",
+			nodeId: "",
+			note: ""
+		},
+		methods : {
+			selectPriority : function (val, level) {
+				this.priority(val);
+				this.priorityVal(level);
+			}
+		}
+	});
+
+	// init node view model
+	var nodesView = new View({
+		el : document.getElementById('info-console'),
+		data : {
+			nodes : []
+		}, 
+		methods: {
+			drawEgonet : function (nodeId) {
+				getEgonet(nodeId);
+			},
+			drawAdjMatrix : function (nodeId) {
+				getAdjMatrix(nodeId);
+			}
+		}
+	});
+
+	// init GFADD view model
+	var gfaddNodesView = new View({
+		el : document.getElementById('GFADD_table'),
+		data : {
+			nodes : []
+		},
+		methods : {
+			drawEgonet : function (nodeId) {
+				getEgonet(nodeId);
+			},
+			drawAdjMatrix : function (nodeId) {
+				getAdjMatrix(nodeId);
+			}
+		}
+	});
+
+	// init ABOD view model
+	var ABODNodesView = new View({
+		el : document.getElementById('ABOD_table'),
+		data : {
+			nodes : []
+		},
+		methods : {
+			drawEgonet : function (nodeId) {
+				getEgonet(nodeId);
+			},
+			drawAdjMatrix : function (nodeId) {
+				getAdjMatrix(nodeId);
+			}
+		}
+	});
+
+	// init anomally score view model
+	var anomallyNodesView = new View({
+		el : document.getElementById('CombAnScore_table'),
+		data : {
+			nodes : []
+		},
+		methods : {
+			drawEgonet : function (nodeId) {
+				getEgonet(nodeId);
+			},
+			drawAdjMatrix : function (nodeId) {
+				getAdjMatrix(nodeId);
+			}
+		}
+	});
+
+	// search node by id
+	function searchNodeById(id) {
+		$('#loading-indicator').modal('show');
+		// fetch nodes when clicked
+		$.ajax({
+			type: 'POST',
+			url: '/SearchNodeID/',
+			contentType: "application/json; charset=UTF-8",
+			response: "application/json; charset=UTF-8",
+			data: JSON.stringify({
+				"id": id.toString(),
+				"dataset_id" : datasetId
+			}),
+			success: function (data) {
+				data = JSON.parse(data);
+				createInformationConsole(data)
+				// scroll to bottom
+				$('html, body').animate({
+					scrollTop: $("#data-browser").offset().top
+				}, 1000);
+				// jump to tab 1
+				$('#tabs li:eq(0) a').tab('show');
+				// hide loading indicator
+				$('#loading-indicator').modal('hide');
+			}
+		});
+	}
+
+	$('#node-search-btn').click(function(e) {
+		var id = $('#search-node-id').val();
+		searchNodeById(id);
+	});
+
+	$('#search-node-id').keydown(function(e){
+		// enter pressed
+		if (e.keyCode == 13) {
+			var id = $(this).val();
+			searchNodeById(id);
+		}
+	});
+	
+	// node for deletion
+	var bindedNode = null;
+
+	// create bookmark button clicked
+	$('#create-bookmark-btn').click(function(e) {
+
+		// show loading indicator
+		$('#loading-indicator').modal('show');
+
+		$.ajax({
+			type: 'POST',
+			url : '/bookmarks/create',
+			data : {
+				'priority': bookmarkView.data().priorityVal(),
+				'x_coord': bookmarkView.data().xCoord(),
+				'y_coord': bookmarkView.data().yCoord(),
+				'prop': bookmarkView.data().propertyName(),
+				'node_id': bookmarkView.data().nodeId(),
+				'is_publicized': bookmarkView.data().publicized(),
+				'note': bookmarkView.data().note(),
+				'dataset_id': datasetId
+			}
+		}).done(function(res) {
+
+			if (res['status'] == 'success') {
+				// turn on star
+				$('.star[data-node-id=' + bindedNode['id'] + ']').addClass("starred").removeClass('unstarred');
+				// set bookmarked to be true
+				bindedNode['bookmarked'] = true;
+				// save bookmark id
+				bindedNode['bookmarkId'] = res['data']['bookmark_id'];
+			}
+
+			showModal(res['message']);
+
+			// hide loading indicator
+			$('#loading-indicator').modal('hide');
+
+		}).fail(function(e) {
+			console.log(e);
+			showModal("Failed to create bookmark!");
+			// hide loading indicator
+			$('#loading-indicator').modal('hide');
+		});
+	});
+
+	// remove bookmark button clicked
+	$('#remove-bookmark-btn').click(function(e) {
+		console.log(bindedNode);
+		if (bindedNode) {
+			$.ajax({
+				url: "/bookmarks/" + bindedNode['bookmarkId'] + "/delete",
+				method: "POST"
+			}).done(function(res){
+				if (res['status'] == 'success') {
+					// turn off star
+					$('.star[data-node-id=' + bindedNode['id'] + ']').removeClass("starred").addClass('unstarred');
+					// set bookmarked to be false
+					bindedNode['bookmarked'] = false;
+				}
+				showModal(res['message']);
+			}).fail(function(e) {
+				console.log(e);
+			});
+		}
+	});
+
+	// fetch data for GFADD score and Combined anomally score
+	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+		var tabname = $(e.target).attr("href");
+		console.log("Clicked on", tabname, "tab");
+		if (tabname === "#GFADD" || tabname === "#ABOD" || tabname === "#CombAnScore") {
+
+			var url_route = "/";
+			if (tabname === "#GFADD") {
+				url_route += "GetGFADD/";
+			}
+			else if (tabname === "#ABOD") {
+				url_route += "GetABOD/";
+			}
+			else if (tabname === "#CombAnScore") {
+				url_route += "GetCombAnScore/";
+			}
+
+			$.ajax({
+				type: 'POST',
+				url: url_route,
+				contentType: "application/json; charset=UTF-8",
+				response: "application/json; charset=UTF-8",
+				data: JSON.stringify({
+					"dataset_id": datasetId
+				}),
+				success: function (data) {
+					console.log("Success!")
+					console.log(data)
+					// extract node attributes
+					var nodes = data.nodeid
+					var scores = data.score
+					var aggnode = data.aggnodeid
+
+					// normalize data
+					var results = []
+					for (var i = 0; i < nodes.length; i++) {
+						results.push({
+							id : nodes[i],
+							score : scores[i],
+							targetId : aggnode[i]
+						})
+					}
+					console.log(results);
+					// populate respective view models
+					if (tabname === "#GFADD") {
+						gfaddNodesView.data().nodes(results);
+					}
+					else if (tabname === "#ABOD") {
+						ABODNodesView.data().nodes(results);
+					}
+					else if (tabname === "#CombAnScore") {
+						anomallyNodesView.data().nodes(results);
+						// trigger bokeh button click 
+						// to load the data
+						$('.bk-bs-btn').click();
+					}
+				},
+				error : function(){
+					$('.bk-bs-btn').click();
+				}
+			});
+		}
+	});
+
+	// graph callback function
+	function nodeSelected(x1, y1, x1_name, y1_name) {
+
+		// show loading indicator
+		$('#loading-indicator').modal('show');
+		console.log("Selected: ");
+		console.log(x1, y1, x1_name, y1_name)
+
+		// save node property to bookmark view model
+		bookmarkView.data().propertyName(x1_name + " vs " + y1_name);
+		bookmarkView.data().xCoord(x1);
+		bookmarkView.data().yCoord(y1);
+
+		// fetch nodes data when clicked
+		$.ajax({
+			type: 'POST',
+			url: '/ClickPlot/',
+			contentType: "application/json; charset=UTF-8",
+			response: "application/json; charset=UTF-8",
+			data: JSON.stringify({
+				"x1": x1.toString(),
+				"y1": y1.toString(),
+				"x_name": x1_name,
+				"y_name": y1_name ,
+				"dataset_id": datasetId
+			}),
+			success: function (data) {
+				// parse the response
+				data = JSON.parse(data);
+				
+				// fill the info console
+				createInformationConsole(data);
+
+				// validate bookmark's existence
+				data.forEach(function(node, index) {
+
+					$.ajax({
+						url: "/bookmarks/validate",
+						method: "POST",
+						data: {
+							'node_id': node[0],
+							'dataset_id': datasetId
+						}
+					}).done(function(res) {
+
+						if (res['status'] == 'success' && res['data']['exists']) {
+							$('.star[data-node-id=' + node[0] + ']').addClass("starred");
+							// update bookmarked flag for each node
+							nodesView.data().nodes()[index]['bookmarked'] = true;
+							// save bookmark id
+							nodesView.data().nodes()[index]['bookmarkId'] = res['data']['bookmark_id'];
+						}
+					}).fail(function(e) {
+						console.log(e['message']);
+					})
+				});
+
+				// scroll to bottom
+				$('html, body').animate({
+					scrollTop: $("#data-browser").offset().top
+				}, 1000);
+				// jump to tab 1
+				$('#tabs li:eq(0) a').tab('show');
+				// hide loading indicator
+				$('#loading-indicator').modal('hide');				
+			}
+		});
+	}
+
+	function getEgonet(id) {
+		console.log("Clicked to get egonet data for node", id);
+		$.ajax({
+			type: 'POST',
+			url: '/GetEgonet/',
+			contentType: "application/json; charset=UTF-8",
+			response: "application/json; charset=UTF-8",
+			data: JSON.stringify({
+				"id": id,
+				"dataset_id": datasetId
+			}),
+			success: function (data) {
+				$("#egonet-id").empty();
+				console.log(data)
+				// draw egonet
+				createEgonet(data)
+				// jump to tab 2
+				$('#tabs li:eq(1) a').tab('show');
+			}
+		});
+	}
+
+	function getAdjMatrix(nodeid){
+		$.ajax({
+			type: 'POST',
+			url: '/GetAdjMatrix/',
+			contentType: "application/json; charset=UTF-8",
+			response: "application/json; charset=UTF-8",
+			data: JSON.stringify({
+				"nodeid": nodeid,
+				"dataset_id": datasetId
+			}),
+			success: function (data) {
+				$("#adj-id").empty();
+				console.log(data)
+				createAdjMatrix(data)
+				// jump to tab 3
+				$('#tabs li:eq(2) a').tab('show');
+			}
+		  });
+	}
+
+	// fill the data retrieved into information console
+	function createInformationConsole(data) {
+		console.log(data);
+        // create node data array
+        var nodes = data.map(function(node) {
+        	// TODO: append bookmarked attribute to nodes
+        	return {
+        		id : node[0],
+        		degree : node[1],
+        		pageRank : node[2],
+        		eigenVector : node[3],
+        		bookmarked : false
+        	}
+        })
+
+        nodesView.data().nodes(nodes);
+    }
+
+	// create adj matrix and egonet
+	function createAdjMatrix(data) {
+		var edgeHash = {};
+		source = data['source']
+		target = data['target']
+		nodes = data['nodes']
+		var edgeHash = {};
+		for (var i = 0; i < source.length; i++) {
+			var id = source[i] + "-" + target[i];
+			edgeHash[id] = 1;
+		}
+
+		matrix = [];
+		for (a in nodes) {
+			for (b in nodes) {
+				var grid = {id: nodes[a] + "-" + nodes[b], x: b, y: a, weight: 0};
+				if (edgeHash[grid.id]) {
+					grid.weight = 1;
+				}
+				matrix.push(grid);
+			}
+		}
+
+		d3.select(".adjacency")
+			.append("g")
+			.attr("transform", "translate(50,50)")
+			.attr("id", "adjacencyG")
+			.selectAll("rect")
+			.data(matrix)
+			.enter()
+			.append("rect")
+			.attr("width", 15)
+			.attr("height", 15)
+			.attr("x", function (d) {return d.x * 15})
+			.attr("y", function (d) {return d.y * 15})
+			.style("stroke", "black")
+			.style("stroke-width", "1px")
+			.style("fill", "red")
+			.style("fill-opacity", function (d) {return d.weight * .2})
+			.on("mouseover", gridOver)
+		
+		var scaleSize = nodes.length * 15;
+		var nameScale = d3.scale.ordinal()
+								.rangePoints([0, scaleSize], 1)
+								.domain(nodes)
+		
+		xAxis = d3.svg.axis()
+					.scale(nameScale)
+					.tickSize(4)
+					.orient("top");    
+		yAxis = d3.svg.axis()
+					.scale(nameScale)
+					.tickSize(4)
+					.orient("left");    
+
+		d3.select("#adjacencyG").append("g").call(xAxis).selectAll("text").style("text-anchor", "end").attr("transform", "translate(-10,-10) rotate(90)");
+		d3.select("#adjacencyG").append("g").call(yAxis);
+		
+		function gridOver(d,i) {
+			d3.selectAll("rect").style("stroke-width", function (p) {
+				return p.x == d.x || p.y == d.y ? "3px" : "1px"
+			})
+		}
+	}
+
+	// Egonet Javascript Code
+	var prevLinks = {},
+		nodes = {};
+
+	function createEgonet(data) {
+
+		shift = false;
+		d3.select("body")
+			.on("keydown",function(){
+			if (d3.event.shiftKey)
+				shift = true
+			else
+				shift = false
+
+			console.log("Shift is:" + shift);
+			})
+			.on("keyup",function(){
+			if (d3.event.shiftKey)
+				shift = true
+			else
+				shift = false
+
+			console.log("Shift is:" + shift);
+			})
+
+			var node;
+
+			var width = 500,
+			height = 500
+
+			var svg = d3.select(".egonet")
+						.attr("width", width)
+						.attr("height", height);
+
+			var force = d3.layout.force()
+							.gravity(.01)
+							.distance(100)
+							.charge(-300)
+							.size([
+								width, 
+								height
+							])
+							.start();
+				
+			// New Code Adjusted for dynamic data
+			var edges = [];
+			data.Links.forEach(function(e) { 
+				var sourceNode = data.Nodes.filter(function(n) { return n.Id === e.Source; })[0],
+				targetNode = data.Nodes.filter(function(n) { return n.Id === e.Target; })[0];
+
+				edges.push({source: sourceNode, target: targetNode, value: e.Value});
+			});
+
+			prevLinks = edges;
+			nodes = data.Nodes;
+
+			var w = 500,
+				h = 500,
+				fill = d3.scale.category20()
+				trans=[0,0]
+				scale=1;
+
+			var brush = d3.svg.brush()
+				.on("brushstart", brushstart)
+				.on("brush", brushing)
+				.on("brushend", brushend);
+
+			//set brush constraints to full width 
+			brushX=d3.scale.linear().range([0, w]), 
+			brushY=d3.scale.linear().range([0, h]);
+
+			var vis=svg
+				.append("svg:svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("pointer-events", "all")
+				.append('svg:g')
+				.attr('class', 'brush') 
+				.call(brush.x(brushX).y(brushY))
+				.style({"fill": "c4c4ff"});
+			
+			//set brush constraints to full width 
+			brushX=d3.scale.linear().range([0, w]), 
+			brushY=d3.scale.linear().range([0, h]);
+
+			function brushstart(){
+				console.log("brushstart!!!")
+			}
+
+			function brushing(){
+				console.log("brushing!!!")
+				var e = brush.extent();
+			}
+
+			function brushend(){
+				var e = brush.extent();
+				console.log("brushend!!!");
+				if(shift){
+					var brush_node=[]
+					node.filter(function (d){
+						if (e[0][0] <= brushX.invert(d.x) && brushX.invert(d.x) <= e[1][0]
+							&& e[0][1] <= brushY.invert(d.y) && brushY.invert(d.y) <= e[1][1])
+							brush_node.push(d.Id);
+						return  e[0][0] <= brushX.invert(d.x) && brushX.invert(d.x) <= e[1][0]
+							&& e[0][1] <= brushY.invert(d.y) && brushY.invert(d.y) <= e[1][1]})
+					
+					deletenodes(brush_node);
+				}
+			}
+
+			force.nodes(nodes)
+				.links(edges)
+				.start();
+
+			var link = svg.selectAll(".link")
+						.data(edges)
+						.enter().append("line")
+						.attr("class", "link");
+
+			node = svg.selectAll(".node")
+							.data(data.Nodes)
+							.enter().append("g")
+							.attr("class", "node")
+							.call(force.drag);
+
+			node.append("circle")
+				.attr("class", "node")
+				.attr("r", 5)
+				.on("click", function(d) {
+					console.log("Clicked on node", d.Id);
+					id = d.Id
+					$.ajax({
+						type: 'POST',
+						url: '/ExpandEgonet/',
+						contentType: "application/json; charset=UTF-8",
+						response: "application/json; charset=UTF-8",
+						data: JSON.stringify({
+							"id": id,
+							"nodes": nodes,
+							"links": prevLinks,
+							"dataset_id" : datasetId
+						}),
+						success: function (data) {
+							$("#egonet-id").empty();
+							console.log(data)
+							// draw egonet
+							createEgonet(data)
+							// jump to tab 2
+							$('#tabs li:eq(1) a').tab('show');
+						}
+					});
+				});
+
+			node.append("svg:a")
+				// .attr("xlink:href", function(d){return d.Id;})
+				.append("text")
+				.attr("dx", 12)
+				.attr("dy", ".35em")
+				.text(function(d) { return d.Id})
+			
+			force.on("tick", function() {
+				node.attr("cx", function(d) { return d.x = Math.max(15, Math.min(width - 15, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(15, Math.min(height - 15, d.y)); });
+
+				link.attr("x1", function(d) { return d.source.x; })
+					.attr("y1", function(d) { return d.source.y; })
+					.attr("x2", function(d) { return d.target.x; })
+					.attr("y2", function(d) { return d.target.y; });
+
+				node.attr("transform", function(d) { 
+					return "translate(" + d.x + "," + d.y + ")"; 
+				});
+			});
+		}
+
+		function deletenodes(nodeid) {
+			console.log('Delete Nodes Called');
+
+			// clear the original canvas
+			d3.select('.egonet').text('');
+
+			var len = nodeid.length;
+			var i;
+			var prevLinksArray = [];
+
+			// Remove Links
+			for (d in prevLinks) {
+				var flag = true;
+				for (i=0; i<len; i++){
+					if (prevLinks[d]['source']['Id'] == nodeid[i] || prevLinks[d]['target']['Id'] == nodeid[i])
+						flag=false;
+				}
+				if (flag==true)
+					prevLinksArray.push(prevLinks[d]);  
+			}
+
+			var prevNodesArray = [];
+
+			// Remove nodes
+			node_deletion_indices = []
+			for (d in nodes){
+				var flag = true
+				for (i=0; i<len; i++) {
+					if (nodes[d]['Id'] === nodeid[i]) {
+						flag=false;
+						node_deletion_indices.push(d);
+						break;
+					}
+				}
+				
+				if (flag == true)
+					prevNodesArray.push(nodes[d]); 
+			}
+
+			prevLinks=prevLinksArray;
+			nodes = prevNodesArray;
+
+			var node;
+
+			var width = 500,
+				height = 500
+
+			var svg = d3.select(".egonet")
+						.attr("width", width)
+						.attr("height", height);
+
+
+			console.log(prevLinks);
+			console.log(nodes);
+
+			var force = d3.layout.force()
+			//.nodes(d3.values(nodes))
+			.nodes(nodes)
+			.links(prevLinks)
+			.on("tick", tick)
+  			.distance(100)
+			.gravity(0.0)
+			.charge(-300)
+			.start();
+
+			// Brushing Code
+			var w = 500,
+				h = 500,
+				fill = d3.scale.category20()
+				trans=[0,0]
+				scale=1;
+
+			var brush = d3.svg.brush()
+				.on("brushstart", brushstart)
+				.on("brush", brushing)
+				.on("brushend", brushend);
+
+			//set brush constraints to full width 
+			brushX=d3.scale.linear().range([0, w]), 
+			brushY=d3.scale.linear().range([0, h]);
+
+			var vis=svg
+				.append("svg:svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("pointer-events", "all")
+				.append('svg:g')
+				.attr('class', 'brush') 
+				.call(brush.x(brushX).y(brushY))
+				.style({"fill": "c4c4ff"});
+			
+			//set brush constraints to full width 
+			brushX=d3.scale.linear().range([0, w]), 
+			brushY=d3.scale.linear().range([0, h]);
+
+			function brushstart(){
+				console.log("brushstart!!!")
+			}
+
+			function brushing(){
+				console.log("brushing!!!")
+				var e = brush.extent();
+			}
+
+			function brushend(){
+				var e = brush.extent();
+				console.log("brushend!!!");
+				if(shift){
+					var brush_node=[]
+					node.filter(function (d){
+						if (e[0][0] <= brushX.invert(d.x) && brushX.invert(d.x) <= e[1][0]
+							&& e[0][1] <= brushY.invert(d.y) && brushY.invert(d.y) <= e[1][1])
+							brush_node.push(d.Id);
+						return  e[0][0] <= brushX.invert(d.x) && brushX.invert(d.x) <= e[1][0]
+							&& e[0][1] <= brushY.invert(d.y) && brushY.invert(d.y) <= e[1][1]})
+					
+					deletenodes(brush_node);
+				}
+			}
+			// End of brushing code
+
+			force.nodes(nodes)
+				.links(prevLinks)
+				.start();
+
+			var link = svg.selectAll(".link")
+				.data(prevLinks)
+				.enter().append("line")
+				.attr("class", "link");
+
+			node = svg.selectAll(".node")
+				.data(nodes)
+				.enter().append("g")
+				.attr("class", "node")
+				.call(force.drag);
+
+			node.append("circle")
+				.attr("class", "node")
+				.on("click", function(d) {
+					console.log("Clicked on node", d.Id);
+					id = d.Id
+					$.ajax({
+						type: 'POST',
+						url: '/ExpandEgonet/',
+						contentType: "application/json; charset=UTF-8",
+						response: "application/json; charset=UTF-8",
+						data: JSON.stringify({
+							"id": id,
+							"nodes": nodes,
+							"links": prevLinks,
+							"dataset_id" : datasetId
+						}),
+						success: function (data) {
+							$("#egonet-id").empty();
+							console.log(data)
+							// draw egonet
+							createEgonet(data)
+							// jump to tab 2
+							$('#tabs li:eq(1) a').tab('show');
+						}
+					});
+				});
+
+			node.append("svg:a")
+				.attr("xlink:href", function(d){return d.Id;})
+				.append("text")
+				.attr("dx", 12)
+				.attr("dy", ".35em")
+				.text(function(d) { return d.Id})
+
+
+			function tick() {
+				node.attr("cx", function(d) { return d.x = Math.max(15, Math.min(width - 15, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(15, Math.min(height - 15, d.y)); });
+
+				link.attr("x1", function(d) { return d.source.x; })
+					.attr("y1", function(d) { return d.source.y; })
+					.attr("x2", function(d) { return d.target.x; })
+					.attr("y2", function(d) { return d.target.y; });
+
+				node.attr("transform", function(d) { 
+					return "translate(" + d.x + "," + d.y + ")"; 
+				});
+			}			
+		}	
+	 
+</script>
+{% endblock scripts %}

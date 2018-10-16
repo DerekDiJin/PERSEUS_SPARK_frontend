@@ -1,0 +1,194 @@
+/*
+Boostrap modifications
+ */
+/* Copy behavior of .alert-danger */
+.alert-error {
+	color: #a94442;
+  background-color: #f2dede;
+  border-color: #ebccd1;
+}
+
+.alert {
+  margin: 10px;
+}
+
+/* File input */
+.input-file {
+  display: inline-block;
+  text-align: left;
+  background: #fff;
+  padding: 16px;
+  width: 450px;
+  position: relative;
+  border-radius: 3px;
+}
+
+.input-file > [type='file'] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.input-file > .button {
+  display: inline-block;
+  cursor: pointer;
+  background: #eee;
+  padding: 8px 16px;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.input-file:hover > .button {
+  background: dodgerblue;
+  color: white;
+}
+
+.input-file > .label {
+  color: #333;
+  white-space: nowrap;
+  opacity: .3;
+}
+
+.input-file.-chosen > .label {
+  opacity: 1;
+}
+
+/* Content wrapper */
+#content {
+  margin-top: 51px;
+}
+
+/* Anchor */
+a {
+	cursor: pointer;
+}
+
+@media(max-width: 768px) {
+	/* Margin fix for navbar text on mobile */
+	.navbar-text {
+		margin-left: 20px;
+		margin-right: 20px;
+	}
+  .sidebar {
+    position: relative !important;
+    top: 0px !important;
+  }
+}
+
+/* Vega canvas fix */
+.vega div {
+  left: 20%;
+}
+.vega div a {
+  padding : 10px;
+}
+
+/* Loader list */
+.loader-list-item {
+  margin-top: 20px;
+}
+.loader-list-item i {
+  margin-left: 40%;
+}
+
+/* Search dropdown */
+.search-dropdown {
+  position: absolute;
+  z-index: 9999;
+  margin-top: 10px;
+}
+
+/* star animation */
+.star {
+  display: block;
+  font-size: 30px;
+  cursor: pointer;
+  width: 30px;
+}
+
+.star-icon {
+  display: block;
+  transition: all .2s ease-in;
+  color: #e8e8ee;
+}
+
+.starred .star-icon {
+  color: #f6c342;
+}
+
+.starred {
+  animation: hop .6s forwards;
+  transform-origin: 50% 50%;
+  transition-timing-function: ease-in-out;
+}
+
+.starred .star-icon {
+  animation: spin .6s forwards;
+  transform-origin: 50% 50%;
+  -webkit-transform-origin: 50% 50%;
+  transition-timing-function: ease-in-out;
+}
+
+.unstarred .star-icon {
+  animation: unspin .3s forwards;
+  transform-origin: 50% 50%;
+  -webkit-transform-origin: 50% 50%;
+  transition-timing-function: ease-in-out;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  33% {
+    transform: rotate(175deg);
+  }
+  66% {
+    transform: rotate(120deg);
+  }
+  100% {
+    transform: rotate(144deg);
+  }
+}
+
+@keyframes unspin {
+  0% {
+    transform: rotate(142deg);
+  }
+  100% {
+    transform: rotate(72deg);
+  }
+}
+
+@keyframes hop {
+  0% {
+    transform: translate(0, 0px);
+  }
+  17% {
+    transform: translate(2px, -10px);
+  }
+  33% {
+    transform: translate(4px, 0px);
+  }
+  50% {
+    transform: translate(-2px, -7px);
+  }
+  66% {
+    transform: translate(-4px, -0px);
+  }
+  84% {
+    transform: translate(-2, -5px);
+  }
+  100% {
+    transform: translate(0, 0px);
+  }
+}
+/* Action dropdown */
+.user-action-dropdown {
+  margin-left: 20%;
+}
